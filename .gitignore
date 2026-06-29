@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# local databases
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
 # next.js
 /.next/
 /out/
