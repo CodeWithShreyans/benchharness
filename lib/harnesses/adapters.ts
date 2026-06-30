@@ -99,7 +99,7 @@ export abstract class AgentHarness {
   }
 
   protected runnerCommand() {
-    return "bun install --frozen-lockfile && bun run scripts/sandbox-runner.ts";
+    return "npm install -g bun@1.3.12 && bun install --frozen-lockfile && bun run scripts/sandbox-runner.ts";
   }
 }
 
