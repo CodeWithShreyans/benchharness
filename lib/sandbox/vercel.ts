@@ -13,6 +13,7 @@ const sandboxCommandResponseSchema = z.object({
   id: z.string().optional(),
   cmdId: z.string().optional(),
   commandId: z.string().optional(),
+  command: z.object({ id: z.string().optional() }).optional(),
 });
 
 const vercelErrorResponseSchema = z.object({
@@ -178,6 +179,11 @@ export async function dispatchCellToSandbox(
   return {
     ok: true,
     sandboxId,
-    commandId: command.cmdId ?? command.commandId ?? command.id ?? null,
+    commandId:
+      command.command?.id ??
+      command.cmdId ??
+      command.commandId ??
+      command.id ??
+      null,
   };
 }

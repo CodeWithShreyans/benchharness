@@ -63,7 +63,7 @@ export abstract class AgentHarness {
     return {
       command: "bash",
       args: ["-lc", this.runnerCommand()],
-      cwd: "/home/vercel-sandbox",
+      cwd: "/vercel/sandbox",
       env: this.buildSandboxEnv(input),
       wait: false,
       logs: false,
