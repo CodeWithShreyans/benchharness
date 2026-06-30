@@ -66,7 +66,7 @@ export abstract class AgentHarness {
       cwd: "/home/vercel-sandbox",
       env: this.buildSandboxEnv(input),
       wait: false,
-      logs: true,
+      logs: false,
       timeout: 3600000,
     };
   }
