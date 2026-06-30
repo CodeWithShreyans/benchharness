@@ -20,7 +20,7 @@ export type SandboxCommandPlan = {
   env: Record<string, string>;
   wait: boolean;
   logs: boolean;
-  timeout: string;
+  timeout: number;
 };
 
 export type HarnessDescriptor = {
@@ -67,7 +67,7 @@ export abstract class AgentHarness {
       env: this.buildSandboxEnv(input),
       wait: false,
       logs: true,
-      timeout: "3600000",
+      timeout: 3600000,
     };
   }
 
