@@ -4,7 +4,6 @@ import { z } from "zod";
 import type { BenchmarkCategory, BenchmarkSuite, BenchmarkTask } from "./types";
 
 export const benchmarkSuiteIds: readonly [
-  "fixture-smoke",
   "swe-bench-verified",
   "swe-bench-pro",
   "terminal-bench-2.1",
@@ -16,7 +15,6 @@ export const benchmarkSuiteIds: readonly [
   "vibe-code-bench-1.1",
   "skillsbench",
 ] = [
-  "fixture-smoke",
   "swe-bench-verified",
   "swe-bench-pro",
   "terminal-bench-2.1",
@@ -40,17 +38,6 @@ type SuiteSeed = {
 };
 
 const suiteSeed: SuiteSeed[] = [
-  {
-    id: "fixture-smoke",
-    name: "Fixture Smoke",
-    category: "software",
-    description:
-      "Minimal imported task used to verify sandbox, harness, callback, and scorer wiring.",
-    sourceUrl: "https://benchharness.dev",
-    primaryMetric: "pass_rate",
-    licenseNote:
-      "Local fixture suite. Use this before launching imported public benchmark corpora.",
-  },
   {
     id: "swe-bench-verified",
     name: "SWE-bench Verified",

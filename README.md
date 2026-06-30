@@ -63,7 +63,7 @@ curl -X POST "$APP_URL/api/internal/benchmark-runs" \
   -d @run.json
 ```
 
-Start with the built-in `fixture-smoke` suite before launching imported public corpora. Benchmark task assets should be placed under `benchmarks/<suiteId>/<taskId>.json`. Without imported task assets, cells fail as `infra_failed` instead of fabricating scores.
+Benchmark task assets should be placed under `benchmarks/<suiteId>/<taskId>.json`. Without imported task assets, cells fail as `infra_failed` instead of fabricating scores.
 
 Vercel Cron calls `/api/internal/benchmark-dispatch` every five minutes to mark stale active cells as `infra_failed` and dispatch queued cells for still-running runs. Use `CRON_SECRET` for cron auth; local cron tests can fall back to `BENCH_START_SECRET`.
 

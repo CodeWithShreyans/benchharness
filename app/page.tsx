@@ -292,8 +292,8 @@ const startExample = `curl -X POST "$APP_URL/api/internal/benchmark-runs" \\
   -H "Authorization: Bearer $BENCH_START_SECRET" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "suiteIds": ["fixture-smoke"],
-    "taskLimit": 1,
+    "suiteIds": ["swe-bench-verified", "terminal-bench-2.1"],
+    "taskLimit": 3,
     "harnesses": ["claude-code", "codex", "opencode", "eve", "mastra"],
     "models": {
       "claude-code": [

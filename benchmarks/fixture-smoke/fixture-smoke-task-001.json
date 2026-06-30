@@ -1,9 +1,0 @@
-{
-  "prompt": "Respond with a concise confirmation that the benchmark harness executed inside the sandbox workspace.",
-  "scorerCommand": "node -e \"const fs = require('fs'); const path = require('path'); const outputPath = path.join(process.cwd(), 'harness-output.txt'); const text = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, 'utf8') : ''; const passed = text.trim().length > 0; fs.writeFileSync('result.json', JSON.stringify({ score: passed ? 100 : 0, passed, logs: 'Fixture scorer checked that the harness produced output.', artifacts: [{ label: 'harness-output.txt', kind: 'log', path: outputPath }], rawHarnessResult: { harnessOutputLength: text.length } }, null, 2));\"",
-  "expectedArtifacts": ["result.json", "harness-output.txt"],
-  "metadata": {
-    "kind": "smoke",
-    "purpose": "Verify harness execution, scorer execution, and callback completion before real benchmark imports."
-  }
-}
