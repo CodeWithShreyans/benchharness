@@ -132,7 +132,7 @@ export async function dispatchCellToSandbox(
           name,
           runtime: "node24",
           persistent: false,
-          timeout: "3600000",
+          timeout: 3600000,
           resources: { vcpus: 2, memory: 4096 },
           source: {
             type: "git",
