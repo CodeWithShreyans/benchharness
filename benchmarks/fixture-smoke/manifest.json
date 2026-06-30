@@ -1,0 +1,13 @@
+{
+  "tasks": [
+    {
+      "id": "fixture-smoke-task-001",
+      "suiteId": "fixture-smoke",
+      "title": "Harness smoke task",
+      "prompt": "Respond with a concise confirmation that the benchmark harness executed inside the sandbox workspace.",
+      "expectedArtifacts": ["result.json", "harness-output.txt"],
+      "sourceRef": "fixture-smoke:001",
+      "requiresOperatorImport": true
+    }
+  ]
+}

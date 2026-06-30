@@ -38,6 +38,9 @@ export default async function Home() {
     (cell) => cell.status === "completed",
   );
   const failedCells = recentCells.filter((cell) => cell.status === "failed");
+  const infraFailedCells = recentCells.filter(
+    (cell) => cell.status === "infra_failed",
+  );
   const averageScore =
     completedCells.length > 0
       ? completedCells.reduce((total, cell) => total + (cell.score ?? 0), 0) /
@@ -63,7 +66,7 @@ export default async function Home() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">Vercel Sandbox</Badge>
               <Badge variant="secondary">5 harnesses</Badge>
-              <Badge variant="secondary">10 suites</Badge>
+              <Badge variant="secondary">{benchmarkSuites.length} suites</Badge>
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
@@ -97,7 +100,7 @@ export default async function Home() {
             icon={<Activity className="size-4" />}
             label="Completed Cells"
             value={completedCells.length.toLocaleString()}
-            detail={`${failedCells.length} failed`}
+            detail={`${failedCells.length} failed, ${infraFailedCells.length} infra failed`}
           />
           <MetricCard
             icon={<ArrowUpRight className="size-4" />}
@@ -289,26 +292,27 @@ const startExample = `curl -X POST "$APP_URL/api/internal/benchmark-runs" \\
   -H "Authorization: Bearer $BENCH_START_SECRET" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "suiteIds": ["swe-bench-verified", "terminal-bench-2.1"],
-    "taskLimit": 3,
+    "suiteIds": ["fixture-smoke"],
+    "taskLimit": 1,
     "harnesses": ["claude-code", "codex", "opencode", "eve", "mastra"],
     "models": {
       "claude-code": [
-        { "id": "opus-4.8", "provider": "anthropic", "model": "claude-opus-4-8", "apiKeyEnv": "ANTHROPIC_API_KEY" }
+        { "id": "opus-4.8-claude-code", "provider": "anthropic", "model": "claude-opus-4-8", "apiKeyEnv": "ANTHROPIC_API_KEY" }
       ],
       "codex": [
         { "id": "gpt-5.5-openai", "codexProviderMode": "openai", "model": "gpt-5.5", "apiKeyEnv": "OPENAI_API_KEY" },
         { "id": "proxy-responses", "codexProviderMode": "responses-compatible", "providerId": "proxy-responses", "model": "gpt-5.5", "baseUrl": "https://proxy.example.com/v1", "apiKeyEnv": "OPENAI_API_KEY" },
-        { "id": "proxy-chat", "codexProviderMode": "chat-compatible", "providerId": "proxy-chat", "model": "gpt-5.5", "baseUrl": "https://proxy.example.com/v1", "apiKeyEnv": "OPENAI_API_KEY" }
+        { "id": "proxy-chat", "codexProviderMode": "chat-compatible", "providerId": "proxy-chat", "model": "gpt-5.5", "baseUrl": "https://proxy.example.com/v1", "apiKeyEnv": "OPENAI_API_KEY" },
+        { "id": "opus-4.8-anthropic-openai-compatible", "provider": "anthropic", "providerId": "anthropic", "codexProviderMode": "chat-compatible", "wireApi": "chat", "model": "claude-opus-4-8", "baseUrl": "https://api.anthropic.com/v1/", "apiKeyEnv": "ANTHROPIC_API_KEY" }
       ],
       "opencode": [
-        { "id": "sonnet-opencode", "provider": "anthropic", "model": "anthropic/claude-sonnet", "apiKeyEnv": "ANTHROPIC_API_KEY" }
+        { "id": "opus-4.8-opencode", "provider": "anthropic", "model": "anthropic/claude-opus-4-8", "apiKeyEnv": "ANTHROPIC_API_KEY" }
       ],
       "eve": [
-        { "id": "eve-gpt", "provider": "openai", "model": "openai/gpt-5.5", "apiKeyEnv": "OPENAI_API_KEY" }
+        { "id": "opus-4.8-eve", "provider": "anthropic", "model": "anthropic/claude-opus-4.8", "apiKeyEnv": "AI_GATEWAY_API_KEY" }
       ],
       "mastra": [
-        { "id": "mastra-gpt", "provider": "vercel", "model": "vercel/openai/gpt-5.5", "apiKeyEnv": "OPENAI_API_KEY" }
+        { "id": "opus-4.8-mastra", "provider": "anthropic", "model": "anthropic/claude-opus-4-8", "apiKeyEnv": "ANTHROPIC_API_KEY" }
       ]
     },
     "maxConcurrency": 10

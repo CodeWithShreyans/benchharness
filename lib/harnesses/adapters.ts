@@ -138,6 +138,8 @@ export class CodexHarness extends AgentHarness {
   override validateModelConfig(modelConfig: ModelConfig) {
     const providerMode = resolveCodexProviderMode(modelConfig);
     const wireApi = resolveCodexWireApi(modelConfig);
+    const usesAnthropicOpenAIEndpoint =
+      isAnthropicOpenAICompatibleCodexProvider(modelConfig);
     const errors: string[] = [];
 
     if (providerMode === "openai") {
@@ -170,6 +172,18 @@ export class CodexHarness extends AgentHarness {
 
     if (providerMode === "chat-compatible" && wireApi !== "chat") {
       errors.push("Codex chat-compatible mode must use wireApi 'chat'.");
+    }
+
+    if (usesAnthropicOpenAIEndpoint && providerMode !== "chat-compatible") {
+      errors.push(
+        "Codex Anthropic OpenAI-compatible endpoint must use codexProviderMode 'chat-compatible'.",
+      );
+    }
+
+    if (usesAnthropicOpenAIEndpoint && wireApi !== "chat") {
+      errors.push(
+        "Codex Anthropic OpenAI-compatible endpoint must use wireApi 'chat'.",
+      );
     }
 
     return errors;
@@ -218,6 +232,12 @@ export function resolveCodexProviderMode(
   if (modelConfig.wireApi === "chat") {
     return "chat-compatible";
   }
+  if (
+    modelConfig.baseUrl &&
+    isAnthropicOpenAICompatibleCodexProvider(modelConfig)
+  ) {
+    return "chat-compatible";
+  }
   if (modelConfig.baseUrl) {
     return "responses-compatible";
   }
@@ -244,7 +264,17 @@ export function resolveCodexProviderId(
   if (providerMode === "openai") {
     return "openai";
   }
+  if (modelConfig.provider) {
+    return modelConfig.provider;
+  }
   return modelConfig.id;
+}
+
+function isAnthropicOpenAICompatibleCodexProvider(modelConfig: ModelConfig) {
+  return (
+    modelConfig.provider === "anthropic" ||
+    modelConfig.providerId === "anthropic"
+  );
 }
 
 function shouldBuildCodexProviderConfig(

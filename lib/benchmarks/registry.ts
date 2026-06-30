@@ -1,6 +1,10 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
 import type { BenchmarkCategory, BenchmarkSuite, BenchmarkTask } from "./types";
 
 export const benchmarkSuiteIds: readonly [
+  "fixture-smoke",
   "swe-bench-verified",
   "swe-bench-pro",
   "terminal-bench-2.1",
@@ -12,6 +16,7 @@ export const benchmarkSuiteIds: readonly [
   "vibe-code-bench-1.1",
   "skillsbench",
 ] = [
+  "fixture-smoke",
   "swe-bench-verified",
   "swe-bench-pro",
   "terminal-bench-2.1",
@@ -35,6 +40,17 @@ type SuiteSeed = {
 };
 
 const suiteSeed: SuiteSeed[] = [
+  {
+    id: "fixture-smoke",
+    name: "Fixture Smoke",
+    category: "software",
+    description:
+      "Minimal imported task used to verify sandbox, harness, callback, and scorer wiring.",
+    sourceUrl: "https://benchharness.dev",
+    primaryMetric: "pass_rate",
+    licenseNote:
+      "Local fixture suite. Use this before launching imported public benchmark corpora.",
+  },
   {
     id: "swe-bench-verified",
     name: "SWE-bench Verified",
@@ -146,6 +162,20 @@ const suiteSeed: SuiteSeed[] = [
   },
 ];
 
+const benchmarkManifestSchema = z.object({
+  tasks: z.array(
+    z.object({
+      id: z.string(),
+      suiteId: z.string(),
+      title: z.string(),
+      prompt: z.string(),
+      expectedArtifacts: z.array(z.string()),
+      sourceRef: z.string(),
+      requiresOperatorImport: z.boolean(),
+    }),
+  ),
+});
+
 function makeTasks(suiteId: string, suiteName: string): BenchmarkTask[] {
   return Array.from({ length: 3 }, (_, index) => {
     const ordinal = index + 1;
@@ -165,11 +195,29 @@ function makeTasks(suiteId: string, suiteName: string): BenchmarkTask[] {
   });
 }
 
+function readManifestTasks(suiteId: string): BenchmarkTask[] | null {
+  const manifestPath = join(
+    process.cwd(),
+    "benchmarks",
+    suiteId,
+    "manifest.json",
+  );
+  if (!existsSync(manifestPath)) {
+    return null;
+  }
+
+  const manifest = benchmarkManifestSchema.parse(
+    JSON.parse(readFileSync(manifestPath, "utf8")),
+  );
+
+  return manifest.tasks;
+}
+
 export const benchmarkSuites: BenchmarkSuite[] = suiteSeed.map((suite) => ({
   ...suite,
   higherIsBetter: true,
   defaultTaskLimit: 3,
-  tasks: makeTasks(suite.id, suite.name),
+  tasks: readManifestTasks(suite.id) ?? makeTasks(suite.id, suite.name),
 }));
 
 export function getBenchmarkSuite(id: string): BenchmarkSuite | undefined {

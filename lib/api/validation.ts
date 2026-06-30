@@ -126,7 +126,10 @@ const codexModelSchema = baseModelSchema
 const harnessSchema = z.enum(harnessIds);
 
 export const startBenchmarkRunSchema = z.object({
-  suiteIds: z.array(z.enum(benchmarkSuiteIds)).min(1).max(10),
+  suiteIds: z
+    .array(z.enum(benchmarkSuiteIds))
+    .min(1)
+    .max(benchmarkSuiteIds.length),
   taskLimit: z.number().int().min(1).max(200).default(3),
   harnesses: z.array(harnessSchema).min(1).max(harnessIds.length),
   models: z.object({
@@ -148,7 +151,7 @@ export const benchmarkEventSchema = z.object({
 });
 
 export const completeCellSchema = z.object({
-  status: z.enum(["completed", "failed"]),
+  status: z.enum(["completed", "failed", "infra_failed"]),
   score: z.number().min(0).max(100).nullable().optional(),
   passed: z.boolean().nullable().optional(),
   durationMs: z.number().int().min(0).nullable().optional(),

@@ -19,6 +19,7 @@ Required environment:
 TURSO_DATABASE_URL=
 TURSO_AUTH_TOKEN=
 BENCH_START_SECRET=
+CRON_SECRET=
 VERCEL_SANDBOX_SOURCE_URL=
 BENCH_CALLBACK_BASE_URL=
 ```
@@ -33,6 +34,7 @@ VERCEL_TEAM_ID=
 VERCEL_PROJECT_ID=
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
+AI_GATEWAY_API_KEY=
 ```
 
 Codex model configs support three provider modes:
@@ -41,6 +43,7 @@ Codex model configs support three provider modes:
 { "id": "gpt-5.5-openai", "codexProviderMode": "openai", "model": "gpt-5.5", "apiKeyEnv": "OPENAI_API_KEY" }
 { "id": "proxy-responses", "codexProviderMode": "responses-compatible", "providerId": "proxy-responses", "model": "gpt-5.5", "baseUrl": "https://proxy.example.com/v1", "apiKeyEnv": "PROXY_API_KEY" }
 { "id": "proxy-chat", "codexProviderMode": "chat-compatible", "providerId": "proxy-chat", "model": "gpt-5.5", "baseUrl": "https://proxy.example.com/v1", "apiKeyEnv": "PROXY_API_KEY" }
+{ "id": "opus-4.8-anthropic-openai-compatible", "provider": "anthropic", "providerId": "anthropic", "codexProviderMode": "chat-compatible", "wireApi": "chat", "model": "claude-opus-4-8", "baseUrl": "https://api.anthropic.com/v1/", "apiKeyEnv": "ANTHROPIC_API_KEY" }
 ```
 
 `wireApi` remains accepted for compatibility; `codexProviderMode` is the preferred field. Codex currently notes that Chat Completions compatibility is deprecated, so use `chat-compatible` only for providers that do not expose the Responses API.
@@ -60,7 +63,9 @@ curl -X POST "$APP_URL/api/internal/benchmark-runs" \
   -d @run.json
 ```
 
-Benchmark task assets should be placed under `benchmarks/<suiteId>/<taskId>.json`. Without imported task assets, cells fail intentionally instead of fabricating scores.
+Start with the built-in `fixture-smoke` suite before launching imported public corpora. Benchmark task assets should be placed under `benchmarks/<suiteId>/<taskId>.json`. Without imported task assets, cells fail as `infra_failed` instead of fabricating scores.
+
+Vercel Cron calls `/api/internal/benchmark-dispatch` every five minutes to mark stale active cells as `infra_failed` and dispatch queued cells for still-running runs. Use `CRON_SECRET` for cron auth; local cron tests can fall back to `BENCH_START_SECRET`.
 
 ## Verification
 

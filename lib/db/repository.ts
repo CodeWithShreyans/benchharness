@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type {
   BenchmarkEventInput,
   CompleteCellInput,
@@ -13,6 +13,7 @@ import type {
   LeaderboardRow,
   ModelConfig,
   NormalizedResult,
+  RunStatus,
 } from "@/lib/benchmarks/types";
 import { getDb, hasDatabase } from "@/lib/db/client";
 import { sampleCells, sampleEvents, sampleRuns } from "@/lib/db/sample-data";
@@ -24,6 +25,15 @@ import {
   benchmarkEvents,
   benchmarkRuns,
 } from "@/lib/db/schema";
+
+const terminalCellStatuses: CellStatus[] = [
+  "completed",
+  "failed",
+  "infra_failed",
+  "canceled",
+];
+const activeCellStatuses: CellStatus[] = ["starting", "running"];
+const dispatchableRunStatuses: RunStatus[] = ["queued", "running"];
 
 type MemoryStore = {
   runs: BenchmarkRunRecord[];
@@ -250,6 +260,24 @@ export async function listRuns() {
   return rows.map(runFromRow);
 }
 
+export async function listRunsForDispatch(limit = 25) {
+  if (!hasDatabase()) {
+    return memoryStore()
+      .runs.filter((run) => dispatchableRunStatuses.includes(run.status))
+      .slice(0, limit);
+  }
+
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(benchmarkRuns)
+    .where(inArray(benchmarkRuns.status, dispatchableRunStatuses))
+    .orderBy(desc(benchmarkRuns.updatedAt))
+    .limit(limit);
+
+  return rows.map(runFromRow);
+}
+
 export async function getRun(runId: string) {
   if (!hasDatabase()) {
     return memoryStore().runs.find((run) => run.id === runId) ?? null;
@@ -394,7 +422,9 @@ export async function addBenchmarkEvent(input: BenchmarkEventInput) {
 export async function completeCell(cellId: string, input: CompleteCellInput) {
   const updatedAt = new Date();
   const status = input.status;
-  const patch: NormalizedResult & { status: "completed" | "failed" } = {
+  const patch: NormalizedResult & {
+    status: "completed" | "failed" | "infra_failed";
+  } = {
     status,
     score: input.score ?? null,
     passed: input.passed ?? null,
@@ -443,6 +473,14 @@ export async function completeCell(cellId: string, input: CompleteCellInput) {
 }
 
 export async function failCells(cellIds: string[], error: string) {
+  return failCellsWithStatus(cellIds, "failed", error);
+}
+
+export async function failCellsWithStatus(
+  cellIds: string[],
+  status: "failed" | "infra_failed",
+  error: string,
+) {
   if (cellIds.length === 0) {
     return;
   }
@@ -455,7 +493,7 @@ export async function failCells(cellIds: string[], error: string) {
       cellIds.includes(cell.id)
         ? {
             ...cell,
-            status: "failed",
+            status,
             error,
             updatedAt: updatedAt.toISOString(),
             completedAt: updatedAt.toISOString(),
@@ -474,15 +512,60 @@ export async function failCells(cellIds: string[], error: string) {
   }
 
   const db = getDb();
+  const impactedRows = await db
+    .select()
+    .from(benchmarkCells)
+    .where(inArray(benchmarkCells.id, cellIds));
+  const runIds = new Set(impactedRows.map((cell) => cell.runId));
+
   await db
     .update(benchmarkCells)
     .set({
-      status: "failed",
+      status,
       error,
       updatedAt,
       completedAt: updatedAt,
     })
     .where(inArray(benchmarkCells.id, cellIds));
+
+  for (const runId of runIds) {
+    await refreshRunCounts(runId);
+  }
+}
+
+export async function markStaleCellsInfraFailed(staleMs: number) {
+  const cutoff = new Date(Date.now() - staleMs);
+  const error = `Cell exceeded stale timeout of ${staleMs} ms.`;
+
+  if (!hasDatabase()) {
+    const store = memoryStore();
+    const staleCells = store.cells.filter(
+      (cell) =>
+        activeCellStatuses.includes(cell.status) &&
+        new Date(cell.updatedAt).getTime() < cutoff.getTime(),
+    );
+    const staleIds = staleCells.map((cell) => cell.id);
+    await failCellsWithStatus(staleIds, "infra_failed", error);
+    return staleCells;
+  }
+
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(benchmarkCells)
+    .where(
+      and(
+        inArray(benchmarkCells.status, activeCellStatuses),
+        lt(benchmarkCells.updatedAt, cutoff),
+      ),
+    );
+  const staleCells = rows.map(cellFromRow);
+  await failCellsWithStatus(
+    staleCells.map((cell) => cell.id),
+    "infra_failed",
+    error,
+  );
+  return staleCells;
 }
 
 async function refreshRunCounts(runId: string) {
@@ -491,15 +574,30 @@ async function refreshRunCounts(runId: string) {
     (cell) => cell.status === "completed",
   ).length;
   const failedCellCount = cells.filter(
+    (cell) => cell.status === "failed" || cell.status === "infra_failed",
+  ).length;
+  const benchmarkFailedCellCount = cells.filter(
     (cell) => cell.status === "failed",
   ).length;
-  const finishedCellCount = completedCellCount + failedCellCount;
+  const infraFailedCellCount = cells.filter(
+    (cell) => cell.status === "infra_failed",
+  ).length;
+  const canceledCellCount = cells.filter(
+    (cell) => cell.status === "canceled",
+  ).length;
+  const finishedCellCount = cells.filter((cell) =>
+    terminalCellStatuses.includes(cell.status),
+  ).length;
   const run = await getRun(runId);
   const status =
     run && finishedCellCount >= run.cellCount
-      ? failedCellCount > 0
+      ? benchmarkFailedCellCount > 0
         ? "failed"
-        : "completed"
+        : infraFailedCellCount > 0
+          ? "infra_failed"
+          : canceledCellCount > 0
+            ? "canceled"
+            : "completed"
       : "running";
   const completedAt =
     run && finishedCellCount >= run.cellCount ? new Date() : null;

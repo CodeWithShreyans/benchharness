@@ -3,6 +3,7 @@ import { authorizeInternalRequest } from "@/lib/api/auth";
 import { completeCellSchema } from "@/lib/api/validation";
 import { addBenchmarkEvent, completeCell } from "@/lib/db/repository";
 import { dispatchQueuedCells } from "@/lib/sandbox/dispatch";
+import { getVercelOidcToken } from "@/lib/sandbox/vercel";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,6 +49,8 @@ export async function POST(
     },
   });
 
-  const dispatch = await dispatchQueuedCells(cell.runId);
+  const dispatch = await dispatchQueuedCells(cell.runId, {
+    oidcToken: getVercelOidcToken(request),
+  });
   return NextResponse.json({ cell, dispatch });
 }

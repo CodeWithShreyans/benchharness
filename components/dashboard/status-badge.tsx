@@ -10,6 +10,10 @@ export function StatusBadge({ status }: Props) {
     return <Badge variant="success">completed</Badge>;
   }
 
+  if (status === "infra_failed") {
+    return <Badge variant="warning">infra failed</Badge>;
+  }
+
   if (status === "failed" || status === "canceled") {
     return <Badge variant="danger">{status}</Badge>;
   }

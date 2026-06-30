@@ -13,8 +13,9 @@ export const runStatuses: readonly [
   "running",
   "completed",
   "failed",
+  "infra_failed",
   "canceled",
-] = ["queued", "running", "completed", "failed", "canceled"];
+] = ["queued", "running", "completed", "failed", "infra_failed", "canceled"];
 
 export type RunStatus = (typeof runStatuses)[number];
 
@@ -24,8 +25,17 @@ export const cellStatuses: readonly [
   "running",
   "completed",
   "failed",
+  "infra_failed",
   "canceled",
-] = ["queued", "starting", "running", "completed", "failed", "canceled"];
+] = [
+  "queued",
+  "starting",
+  "running",
+  "completed",
+  "failed",
+  "infra_failed",
+  "canceled",
+];
 
 export type CellStatus = (typeof cellStatuses)[number];
 
