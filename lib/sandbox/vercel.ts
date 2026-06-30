@@ -135,8 +135,9 @@ export async function dispatchCellToSandbox(
           timeout: "3600000",
           resources: { vcpus: 2, memory: 4096 },
           source: {
-            type: "value",
+            type: "git",
             url: process.env.VERCEL_SANDBOX_SOURCE_URL,
+            depth: 1,
             revision: process.env.VERCEL_SANDBOX_SOURCE_REVISION ?? "main",
           },
           projectId: process.env.VERCEL_PROJECT_ID,
