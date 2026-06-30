@@ -133,7 +133,7 @@ export async function dispatchCellToSandbox(
           runtime: "node24",
           persistent: false,
           timeout: "3600000",
-          resources: { vcpus: "2", memory: "4096" },
+          resources: { vcpus: 2, memory: 4096 },
           source: {
             type: "value",
             url: process.env.VERCEL_SANDBOX_SOURCE_URL,
